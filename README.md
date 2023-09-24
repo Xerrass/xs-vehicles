@@ -27,4 +27,4 @@ git clone https://github.com/Xerrass/xs-vehicles.git
 ```
 
 
-7. Start the Server and enjoy your syncced Weather
+4. Start the Server and enjoy your syncced Weather
