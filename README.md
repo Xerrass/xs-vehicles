@@ -24,7 +24,6 @@ cd src/core/plugins
 **HTTPS**
 ```
 git clone https://github.com/Xerrass/xs-vehicles.git
-
 ```
 
 
