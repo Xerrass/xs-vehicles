@@ -18,10 +18,15 @@ Athena.commands.register("setColors", "pri, sec, pearl, customPri, customSec", [
 
 Athena.commands.register(
     "gasup",
-    "/gasup - Fill the vehicle Tank to the max",
+    "/gasup [fuelLevel] - Fill the vehicle Tank to the max or to the optional argument",
     ['admin'],
-    (player: alt.Player) => {
-        let vehicle = Athena.utility.closest.getClosestVehicle(player.pos)
-        alt.emitClient(player, XVEHICLE_EVENTS.SETFUELLEVEL, vehicle, 1000)
+    (player: alt.Player, ...args) => {
+        if (typeof args[0] !== "undefined") {
+            let vehicle = Athena.utility.closest.getClosestVehicle(player.pos)
+            alt.emitClient(player, XVEHICLE_EVENTS.SETFUELLEVEL, vehicle, parseInt(args[0]))
+        } else {
+            let vehicle = Athena.utility.closest.getClosestVehicle(player.pos)
+            alt.emitClient(player, XVEHICLE_EVENTS.SETFUELLEVEL, vehicle, 1000)
+        }
     }
 )
