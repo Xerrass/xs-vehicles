@@ -10,7 +10,7 @@ Does the Following:
 -   Implements Milage for Cars, Quads, Bikes
 -   Implements UseHours for Boats, Planes and Helis
 
-## Modded Vehicles
+# Modded Vehicles
 
 To get Use Hours or Milage Tracking they need to be added here:
 src/core/shared/information/vehicles.ts
