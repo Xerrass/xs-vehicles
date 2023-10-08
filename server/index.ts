@@ -23,9 +23,9 @@ async function spawnVehicles() {
             let spawnedVehicle = Athena.vehicle.spawn.persistent(vehicle);
             if (!Athena.vehicle.controls.isLocked(spawnedVehicle)) {
                 Athena.vehicle.controls.toggleLock(spawnedVehicle)
-                if (spawnedVehicle.engineOn) {
-                    Athena.vehicle.controls.toggleEngine(spawnedVehicle)
-                }
+            }
+            if (spawnedVehicle.engineOn) {
+                Athena.vehicle.controls.toggleEngine(spawnedVehicle)
             }
             count++
         }
