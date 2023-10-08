@@ -1,13 +1,11 @@
 import * as alt from 'alt-client';
 import * as native from 'natives'
 import * as Athena from '@AthenaClient/api';
-import { sendNotification, clearAll } from '@AthenaPlugins/fnky-notifcations/client';
 import { XVEHICLE_EVENTS } from '../shared/enum/events';
 import { VEHICLE_TYPE, isVehicleType } from '@AthenaShared/enums/vehicleTypeFlags';
 import { VehicleData } from '@AthenaShared/information/vehicles';
 
 let engineInterval, milageinterval, useHoursInterval
-
 let hideRadar = true;
 let milage = 0, useHours = 0;
 
@@ -22,7 +20,6 @@ export class VehicleFunctions {
 
     }
 
-
     static handleEnteredVehicle(vehicle: alt.Vehicle, seat: number) {
         let player: alt.Player = alt.Player.local
         // Do not shuffle to driver seat
@@ -34,8 +31,6 @@ export class VehicleFunctions {
         hideRadar = false
         if (seat == 1) {
             alt.emit(XVEHICLE_EVENTS.STARTENGINEINTERVAL, vehicle)
-
-
         }
         let data = null;
         if (typeof vehicle.model === 'string') {
@@ -46,7 +41,7 @@ export class VehicleFunctions {
             data = VehicleData.find((dat) => dat.hash === modelAsNumber);
         }
         if (seat == 1) {
-            if (isVehicleType(data.type, VEHICLE_TYPE.CAR) || isVehicleType(data.type, VEHICLE_TYPE.AMPHIBIOUS_AUTOMOBILE) || isVehicleType(data.type, VEHICLE_TYPE.QUADBIKE) || isVehicleType(data.type, VEHICLE_TYPE.AMPHIBIOUS_QUADBIKE)|| isVehicleType(data.type, VEHICLE_TYPE.BIKE)) {
+            if (isVehicleType(data.type, VEHICLE_TYPE.CAR) || isVehicleType(data.type, VEHICLE_TYPE.AMPHIBIOUS_AUTOMOBILE) || isVehicleType(data.type, VEHICLE_TYPE.QUADBIKE) || isVehicleType(data.type, VEHICLE_TYPE.AMPHIBIOUS_QUADBIKE) || isVehicleType(data.type, VEHICLE_TYPE.BIKE)) {
                 alt.emit(XVEHICLE_EVENTS.STARTMILAGEINTERVAL, vehicle)
             }
             if (isVehicleType(data.type, VEHICLE_TYPE.HELI) || isVehicleType(data.type, VEHICLE_TYPE.PLANE) || isVehicleType(data.type, VEHICLE_TYPE.BOAT) || isVehicleType(data.type, VEHICLE_TYPE.SUBMARINE)) {
@@ -106,7 +101,7 @@ export class VehicleFunctions {
         alt.log(`recieved data from server -> Milage: ${_milage} UseHours: ${_useHours}`)
     }
 
-    static startEngineInterval(vehicle) {
+    static startEngineInterval(vehicle: alt.Vehicle) {
         engineInterval = alt.setInterval(() => {
             if (vehicle.engineOn) {
                 if (vehicle.rpm > 0 && vehicle.rpm <= 0.2) {
@@ -130,6 +125,9 @@ export class VehicleFunctions {
         let lastPosition = null
 
         milageinterval = alt.setInterval(() => {
+            if (!vehicle.engineOn) {
+                return
+            }
             let distance
             if (lastPosition == null) {
                 lastPosition = vehicle.pos
