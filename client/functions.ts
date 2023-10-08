@@ -5,15 +5,17 @@ import { XVEHICLE_EVENTS } from '../shared/enum/events';
 import { VEHICLE_TYPE, isVehicleType } from '@AthenaShared/enums/vehicleTypeFlags';
 import { VehicleData } from '@AthenaShared/information/vehicles';
 
-let engineInterval, milageinterval, useHoursInterval
+let engineInterval, milageinterval, useHoursInterval;
 let hideRadar = true;
 let milage = 0, useHours = 0;
 
 export class VehicleFunctions {
     static init() {
+
+        // TODO Needs rework as we are litteraly hiding everything wich is not the intended behavior
         alt.everyTick(() => {
             if (hideRadar) {
-                native.hideHudAndRadarThisFrame()
+                native.hideHudAndRadarThisFrame();
             }
         })
 
@@ -24,14 +26,21 @@ export class VehicleFunctions {
         let player: alt.Player = alt.Player.local
         // Do not shuffle to driver seat
         native.setPedConfigFlag(alt.Player.local, 184, true)
-        //Do not put on 
+        //Do not put on Helmet
         native.setPedConfigFlag(alt.Player.local, 35, false)
         // Removing the radio from the vehicle
         native.setVehicleRadioEnabled(vehicle, false)
-        hideRadar = false
-        if (seat == 1) {
-            alt.emit(XVEHICLE_EVENTS.STARTENGINEINTERVAL, vehicle)
+
+        // If not the driver nothing else is to be done
+        if (seat != 1) {
+            return
         }
+
+        hideRadar = false
+
+        // Start Fuelk Tracking
+        alt.emit(XVEHICLE_EVENTS.STARTENGINEINTERVAL, vehicle)
+
         let data = null;
         if (typeof vehicle.model === 'string') {
             const modelAsString = vehicle.model as String;
@@ -40,13 +49,23 @@ export class VehicleFunctions {
             const modelAsNumber = vehicle.model as Number;
             data = VehicleData.find((dat) => dat.hash === modelAsNumber);
         }
-        if (seat == 1) {
-            if (isVehicleType(data.type, VEHICLE_TYPE.CAR) || isVehicleType(data.type, VEHICLE_TYPE.AMPHIBIOUS_AUTOMOBILE) || isVehicleType(data.type, VEHICLE_TYPE.QUADBIKE) || isVehicleType(data.type, VEHICLE_TYPE.AMPHIBIOUS_QUADBIKE) || isVehicleType(data.type, VEHICLE_TYPE.BIKE)) {
-                alt.emit(XVEHICLE_EVENTS.STARTMILAGEINTERVAL, vehicle)
-            }
-            if (isVehicleType(data.type, VEHICLE_TYPE.HELI) || isVehicleType(data.type, VEHICLE_TYPE.PLANE) || isVehicleType(data.type, VEHICLE_TYPE.BOAT) || isVehicleType(data.type, VEHICLE_TYPE.SUBMARINE)) {
-                alt.emit(XVEHICLE_EVENTS.STARTUSAGEINTERVAL, vehicle)
 
+        // if we got valid Vehicle Data we start ether the Milage or the Use Hours Interval
+        if (data == null) {
+            if (isVehicleType(data.type, VEHICLE_TYPE.CAR)
+                || isVehicleType(data.type, VEHICLE_TYPE.AMPHIBIOUS_AUTOMOBILE)
+                || isVehicleType(data.type, VEHICLE_TYPE.QUADBIKE)
+                || isVehicleType(data.type, VEHICLE_TYPE.AMPHIBIOUS_QUADBIKE)
+                || isVehicleType(data.type, VEHICLE_TYPE.BIKE)) {
+
+                alt.emit(XVEHICLE_EVENTS.STARTMILAGEINTERVAL, vehicle);
+            }
+            if (isVehicleType(data.type, VEHICLE_TYPE.HELI)
+                || isVehicleType(data.type, VEHICLE_TYPE.PLANE)
+                || isVehicleType(data.type, VEHICLE_TYPE.BOAT)
+                || isVehicleType(data.type, VEHICLE_TYPE.SUBMARINE)) {
+
+                alt.emit(XVEHICLE_EVENTS.STARTUSAGEINTERVAL, vehicle);
             }
         }
     }
@@ -54,28 +73,32 @@ export class VehicleFunctions {
 
     static handleLeftVehicle(vehicle: alt.Vehicle, seat: number) {
         hideRadar = true
-        if (seat == 1) {
-            alt.emitServer(XVEHICLE_EVENTS.UPDATEFUELLEVEL, vehicle, vehicle.fuelLevel)
-            if (milage != 0) {
-                alt.emitServer(XVEHICLE_EVENTS.UPDATEMILAGE, vehicle, milage)
-                milage = 0
-            }
-            if (useHours != 0) {
-                alt.emitServer(XVEHICLE_EVENTS.UPDATEUSEHOURS, vehicle, useHours)
-                useHours = 0
-            }
-
-            if (engineInterval) {
-                alt.clearInterval(engineInterval)
-            }
-            if (milageinterval) {
-                alt.clearInterval(milageinterval)
-            }
-            if (useHoursInterval) {
-                alt.clearInterval(useHoursInterval)
-
-            }
+        if (seat != 1) {
+            return
         }
+        //updating the Fuel Level and UsageHours in the Database
+        alt.emitServer(XVEHICLE_EVENTS.UPDATEFUELLEVEL, vehicle, vehicle.fuelLevel)
+        if (milage != 0) {
+            alt.emitServer(XVEHICLE_EVENTS.UPDATEMILAGE, vehicle, milage)
+            milage = 0
+        }
+        if (useHours != 0) {
+            alt.emitServer(XVEHICLE_EVENTS.UPDATEUSEHOURS, vehicle, useHours)
+            useHours = 0
+        }
+
+        //stopping all intervals if they are running
+        if (engineInterval) {
+            alt.clearInterval(engineInterval);
+        }
+        if (milageinterval) {
+            alt.clearInterval(milageinterval);
+        }
+        if (useHoursInterval) {
+            alt.clearInterval(useHoursInterval);
+
+        }
+
     }
 
 
@@ -85,7 +108,7 @@ export class VehicleFunctions {
         } else {
             vehicle.fuelLevel = fuelLevel
         }
-        alt.log(`recieved Fuel Level from server: ${vehicle.fuelLevel} / ${vehicle.handling.petrolTankVolume}`)
+        alt.logDebug(`recieved Fuel Level from server: ${vehicle.fuelLevel} / ${vehicle.handling.petrolTankVolume}`);
     }
 
     static setMilageOrUseHours(vehicle: alt.Vehicle, _milage: number, _useHours: number) {
@@ -98,7 +121,7 @@ export class VehicleFunctions {
         } else {
             useHours = _useHours
         }
-        alt.log(`recieved data from server -> Milage: ${_milage} UseHours: ${_useHours}`)
+        alt.logDebug(`recieved data from server -> Milage: ${_milage} UseHours: ${_useHours}`);
     }
 
     static startEngineInterval(vehicle: alt.Vehicle) {
@@ -115,10 +138,10 @@ export class VehicleFunctions {
                 } else if (vehicle.rpm > 0.8 && vehicle.rpm <= 1) {
                     vehicle.fuelLevel -= 0.0008;
                 }
-                alt.logDebug(`RPM: ${vehicle.rpm} Fuel: ${vehicle.fuelLevel}`)
+                alt.logDebug(`RPM: ${vehicle.rpm} Fuel: ${vehicle.fuelLevel}`);
             }
 
-        }, 100)
+        }, 100);
     }
 
     static startMilageInterval(vehicle: alt.Vehicle) {
@@ -132,10 +155,10 @@ export class VehicleFunctions {
             if (lastPosition == null) {
                 lastPosition = vehicle.pos
             } else {
-                distance = Athena.utility.vector.distance(lastPosition, vehicle.pos)
+                distance = Athena.utility.vector.distance(lastPosition, vehicle.pos);
                 milage += distance
                 lastPosition = vehicle.pos
-                alt.log(milage)
+                alt.logDebug(milage);
             }
 
         }, 2000)
@@ -148,14 +171,14 @@ export class VehicleFunctions {
             if (vehicle.engineOn) {
                 useHours += 10
             }
-            alt.log(`Current use Seconds: ${useHours} and Vehicle Engine is ${vehicle.engineOn}`)
-        }, 10000)
+            alt.logDebug(`Current use Seconds: ${useHours} and Vehicle Engine is ${vehicle.engineOn}`);
+        }, 10000);
     }
 }
-alt.on('enteredVehicle', VehicleFunctions.handleEnteredVehicle)
-alt.on("leftVehicle", VehicleFunctions.handleLeftVehicle)
-alt.onServer(XVEHICLE_EVENTS.SETFUELLEVEL, VehicleFunctions.setFuelLevel)
-alt.onServer(XVEHICLE_EVENTS.SETMILAGEORUSEHOURS, VehicleFunctions.setMilageOrUseHours)
+alt.on('enteredVehicle', VehicleFunctions.handleEnteredVehicle);
+alt.on("leftVehicle", VehicleFunctions.handleLeftVehicle);
+alt.onServer(XVEHICLE_EVENTS.SETFUELLEVEL, VehicleFunctions.setFuelLevel);
+alt.onServer(XVEHICLE_EVENTS.SETMILAGEORUSEHOURS, VehicleFunctions.setMilageOrUseHours);
 
 
 alt.on(XVEHICLE_EVENTS.STARTENGINEINTERVAL, VehicleFunctions.startEngineInterval)
