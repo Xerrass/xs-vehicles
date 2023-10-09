@@ -49,7 +49,7 @@ export class VehicleFunctions {
             const modelAsNumber = vehicle.model as Number;
             data = VehicleData.find((dat) => dat.hash === modelAsNumber);
         }
-
+        // TODO what to do with Bikes!?
         // if we got valid Vehicle Data we start ether the Milage or the Use Hours Interval
         if (data == null) {
             if (isVehicleType(data.type, VEHICLE_TYPE.CAR)
